@@ -68,7 +68,7 @@ def backward_propagate_error(network, expected):
             print('deltas: ', errors)
         for j in range(len(layer)): # TODO: é gradiente?
             neuron = layer[j]
-            neuron['delta'] = errors[j] / transfer_derivative(neuron['output'])
+            neuron['delta'] = errors[j] * transfer_derivative(neuron['output'])
 
 def to_float(values):
     result = list()
@@ -103,37 +103,41 @@ def main(args):
     total_cost = 0 # TODO:
     total_lines_dataset = 0
 
-    for row in dataset:
-        result_split = row[0].rstrip().split('; ')
-        
-        # preparando os dados
-        other_attributes = result_split[0].rstrip().split(', ')
-        attributes = list()
-        attributes.append('1.00000')
-        attributes = attributes + other_attributes
-        
-        expected_values = result_split[1].rstrip().split(', ')
+    for epoch in range(20):
+        for row in dataset:
+            result_split = row[0].rstrip().split('; ')
+            
+            # preparando os dados
+            other_attributes = result_split[0].rstrip().split(', ')
+            attributes = list()
+            attributes.append('1.00000')
+            attributes = attributes + other_attributes
+            
+            expected_values = result_split[1].rstrip().split(', ')
 
-        # realizando o forward_propagate
-        output = forward_propagate(network, attributes)
+            # realizando o forward_propagate
+            output = forward_propagate(network, attributes)
 
-        # realizando o calculo do custo
-        last_neuron = network[-1][0]
-        print('custo: ', cost(np.array(output), np.array(to_float(expected_values))))
+            print('output: ', output)
 
-        # realizando o backpropagation
-        backward_propagate_error(network, expected_values)
+            # realizando o calculo do custo
+            last_neuron = network[-1][0]
+            print('custo: ', cost(np.array(output), np.array(to_float(expected_values))))
 
+            # realizando o backpropagation
+            backward_propagate_error(network, expected_values)
 
-        # preparando o dataset para atualizar os pesos
-        row_without_bies = attributes
-        row_without_bies.pop(0)
-        row_to_update = row_without_bies + expected_values
+            # preparando o dataset para atualizar os pesos
+            row_without_bies = attributes
+            row_without_bies.pop(0)
+            row_to_update = row_without_bies + expected_values
 
-        # realizando a atualização dos pesos
-        update_weights(network, to_float(row_to_update), 0.001)
+            # realizando a atualização dos pesos
+            update_weights(network, to_float(row_to_update), 0.001)
 
-        #print_network(network)
+            #print_network(network)
+
+            print('\n')
 
     return 0
 

@@ -57,7 +57,7 @@ def update_weights(network, row, l_rate):
                 neuron['weights'][j] += l_rate * neuron['delta'] * inputs[j]
             neuron['weights'][-1] += l_rate * neuron['delta']
 
-def backward_propagate_error(network, expected):
+def backward(network, expected):
     for i in reversed(range(len(network))):
         layer = network[i]
         errors = list()
@@ -72,19 +72,28 @@ def backward_propagate_error(network, expected):
                 neuron = layer[j]
                 errors.append(neuron['output'] - float(expected[j]))
             print('deltas: ', errors)
-        for j in range(len(layer)): # TODO: é gradiente?
+        for j in range(len(layer)):
             neuron = layer[j]
             neuron['delta'] = errors[j] * transfer_derivative(neuron['output'])
 
-def my_backward(network, expected, result_cost):
-    print(network)
-    for i in reversed(range(len(network))):
-        layer = network[i]
-        if i != len(network)-1:
-            for j in range(len(layer)):
-                for neuron in network[i + 1]:
-                    print(neuron['weights'][j])
+def calculate_numerical_gradients(network, x, y):
+    epsilon = 1e-8
+    for layer in network:
+        for neuron in layer:
+            neuron['gradient'] = 0
+            for index_weight in range(len(neuron['weights'])):
+                neuron['weights'][index_weight] += epsilon
+                plus_epsilon_propagation = forward_propagate(network, x)
+                plus_epsilon_cost = cost(np.array(plus_epsilon_propagation), np.array(y))
 
+                neuron['weights'][index_weight] -= (2 * epsilon)
+                less_epsilon_propagation = forward_propagate(network, x)
+                less_epsilon_cost = cost(np.array(less_epsilon_propagation), np.array(y))
+
+                neuron['weights'][index_weight] += epsilon
+                gradient = (plus_epsilon_cost - less_epsilon_cost) / (2 * epsilon)
+                aux = neuron['gradient'] 
+                neuron['gradient'] = aux + gradient
 
 def to_float(values):
     result = list()
@@ -144,19 +153,19 @@ def main(args):
         print('[INFO] Derivada: ', transfer_derivative(result_cost))
 
         # realizando o backpropagation
-        #backward(network, expected_values)
-
-        #my_backward(network, expected_values, result_cost)
+        backward(network, expected_values)
 
         # preparando o dataset para atualizar os pesos
         row_without_bies = attributes
         row_without_bies.pop(0)
         row_to_update = row_without_bies + expected_values
 
+        #calculate_numerical_gradients(network, to_float(other_attributes), to_float(expected_values))
+
         # realizando a atualização dos pesos
         #update_weights(network, to_float(row_to_update), 0.001)
 
-        #print_network(network)
+        print_network(network)
 
         print('\n')
 

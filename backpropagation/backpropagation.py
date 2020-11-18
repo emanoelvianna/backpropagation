@@ -16,16 +16,22 @@ def sigmoid(activation):
 def forward_propagate(network, row):
     '''função responsável em propagar os valores da rede para frente'''
     inputs = row
-    
+    print('a', inputs)
     index = 0
     for layer in network:
         new_inputs = list()
+        Zs =  list()
+        As =  list()
         if index != len(network)-1:
             new_inputs.append(1.00000) # adicionando a entrada do vies
         for neuron in layer:
             activation = dot(neuron['weights'], inputs)
+            Zs.append(activation)
+            As.append(sigmoid(activation))
             neuron['output'] = sigmoid(activation)
             new_inputs.append(neuron['output'])
+        print('z', Zs)
+        print('a', As)
         inputs = new_inputs
         index = index + 1
     return inputs
@@ -70,6 +76,16 @@ def backward_propagate_error(network, expected):
             neuron = layer[j]
             neuron['delta'] = errors[j] * transfer_derivative(neuron['output'])
 
+def my_backward(network, expected, result_cost):
+    print(network)
+    for i in reversed(range(len(network))):
+        layer = network[i]
+        if i != len(network)-1:
+            for j in range(len(layer)):
+                for neuron in network[i + 1]:
+                    print(neuron['weights'][j])
+
+
 def to_float(values):
     result = list()
     for value in values:
@@ -95,7 +111,7 @@ def main(args):
     print('[INFO] lendo o arquivo de dataset')
     dataset = read_dataset(args[3])
     
-    print('[INFO] criado a rede neural')
+    print('[INFO] criando a rede neural')
     network = create_network(def_network, initial_weights)
 
     print('\n')
@@ -103,41 +119,46 @@ def main(args):
     total_cost = 0 # TODO:
     total_lines_dataset = 0
 
-    for epoch in range(20):
-        for row in dataset:
-            result_split = row[0].rstrip().split('; ')
-            
-            # preparando os dados
-            other_attributes = result_split[0].rstrip().split(', ')
-            attributes = list()
-            attributes.append('1.00000')
-            attributes = attributes + other_attributes
-            
-            expected_values = result_split[1].rstrip().split(', ')
+    for row in dataset:
+        result_split = row[0].rstrip().split('; ')
+        
+        # preparando os dados
+        other_attributes = result_split[0].rstrip().split(', ')
+        print('Propagando entrada: ', other_attributes)
+        attributes = list()
+        attributes.append('1.00000')
+        attributes = attributes + other_attributes
+        
+        expected_values = result_split[1].rstrip().split(', ')
 
-            # realizando o forward_propagate
-            output = forward_propagate(network, attributes)
+        # realizando o forward_propagate
+        output = forward_propagate(network, attributes)
 
-            print('output: ', output)
+        print('[INFO] f(x): ', output)
+        # realizando o calculo do custo
+        result_cost = cost(np.array(output), np.array(to_float(expected_values)))        
+        print('[INFO] Valor J: ', result_cost,' para a linha ', row)
+        print('[INFO] Saida predita: ', output)
+        print('[INFO] Saida esperada: ', expected_values)
 
-            # realizando o calculo do custo
-            last_neuron = network[-1][0]
-            print('custo: ', cost(np.array(output), np.array(to_float(expected_values))))
+        print('[INFO] Derivada: ', transfer_derivative(result_cost))
 
-            # realizando o backpropagation
-            backward_propagate_error(network, expected_values)
+        # realizando o backpropagation
+        #backward(network, expected_values)
 
-            # preparando o dataset para atualizar os pesos
-            row_without_bies = attributes
-            row_without_bies.pop(0)
-            row_to_update = row_without_bies + expected_values
+        #my_backward(network, expected_values, result_cost)
 
-            # realizando a atualização dos pesos
-            update_weights(network, to_float(row_to_update), 0.001)
+        # preparando o dataset para atualizar os pesos
+        row_without_bies = attributes
+        row_without_bies.pop(0)
+        row_to_update = row_without_bies + expected_values
 
-            #print_network(network)
+        # realizando a atualização dos pesos
+        #update_weights(network, to_float(row_to_update), 0.001)
 
-            print('\n')
+        #print_network(network)
+
+        print('\n')
 
     return 0
 
